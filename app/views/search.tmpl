@@ -1,0 +1,26 @@
+{{define "content"}}
+
+<div class="container">
+  <div class="row justify-content-md-center">
+    <div class="col col-lg-2">
+    </div>
+    <div class="col-md-auto">
+      <form action="/search/confirm" method="post" name="searchForm">
+        <div class="form-group">
+          <label for="url">サイトのURL</label>
+          <input type="text" class="form-control" id="url" placeholder="Url" name="url" value="{{ .form.Url }}">
+          <small class="form-text text-muted">スクレイプするURLを設定して下さい。</small>
+        </div>
+        <div class="form-group">
+          <label for="url">比較する要素</label>
+          <input type="text" class="form-control" id="query" placeholder="Query" name="query" value="{{ .form.Query }}">
+          <small class="form-text text-muted">Chromeなどのブラウザで検証モードでセレクタをコピーしたものを貼り付けて下さい。</small>
+        </div>
+        <button type="submit" class="btn btn-primary">確認</button>
+      </form>
+    </div>
+    <div class="col col-lg-2">
+    </div>
+  </div>
+</div>
+{{end}}

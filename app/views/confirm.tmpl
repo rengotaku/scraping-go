@@ -1,0 +1,32 @@
+{{define "content"}}
+
+<div class="container">
+  <div class="row justify-content-md-center">
+    <div class="col col-lg-2">
+    </div>
+    <div class="col-md-auto">
+      <form action="/target" method="post">
+        <div class="form-group">
+          <h2>サイトのURL</h2>
+          <input type="text" value="{{ .form.Url }}" class="form-control" id="url" placeholder="Url" readonly>
+        </div>
+        <div class="form-group">
+          <h2>比較する要素</h2>
+          <input type="text" value="{{ .form.Query }}" class="form-control" id="query" placeholder="Query" readonly>
+        </div>
+        <div class="form-group">
+          <h2>監視する要素</h2>
+          <textarea class="form-control" name="target-element" rows="4" cols="40" readonly>{{ .form.TargetElement }}</textarea>
+        </div>
+        <div class="form-group">
+          <h2>要素のテキスト</h2>
+          <textarea class="form-control" name="element-name" rows="4" cols="40" placeholder="Target Element" readonly>{{ .form.Text }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">確定</button>
+      </form>
+    </div>
+    <div class="col col-lg-2">
+    </div>
+  </div>
+</div>
+{{end}}
