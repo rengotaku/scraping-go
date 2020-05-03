@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/locales/ja_JP"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
+	ja_translations "github.com/go-playground/validator/v10/translations/ja"
 )
 
 type defaultValidator struct {
@@ -26,6 +27,7 @@ func (v *defaultValidator) ValidateStruct(obj interface{}) error {
 
 		fmt.Println("ValidateStruct")
 		if err := v.validate.Struct(obj); err != nil {
+			fmt.Println("v.validate.Struct")
 			// fmt.Println(err)
 
 			errs := err.(validator.ValidationErrors)
@@ -58,18 +60,13 @@ func (v *defaultValidator) lazyinit() {
 		v.validate = validator.New()
 		v.validate.SetTagName("binding")
 
-		//
-		japanese := ja_JP.New()
-		uni := ut.New(japanese, japanese)
+		trans := ut.New(ja_JP.New(), ja_JP.New())
 
-		trans, _ := uni.GetTranslator("ja_JP")
-		_ = trans.Add("ConfirmForm.Url", "フォームユーアルエル", false)
-		_ = trans.Add("Url", "ユーアルエル", false)
-		_ = trans.Add("Query", "クエリ", false)
+		ja, _ := trans.GetTranslator("ja")
+		_ = ja.Add("Url", "こんにちは", false)
 
-		v.validate.RegisterTranslation("required", trans, func(ut ut.Translator) error {
-			return ut.Add("required", "{0}は必須項目です", false)
-		}, TransFunc)
+		validate := validator.New()
+		ja_translations.RegisterDefaultTranslations(validate, ja)
 
 		// _ = trans.Add("Url", "ユーアルエル", false)
 		// _ = ja_translations.RegisterDefaultTranslations(v.validate, trans)

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -10,24 +9,38 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gin-gonic/gin"
 
-	"github.com/go-playground/locales/ja_JP"
-	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
 	"github.com/gocolly/colly/v2"
+	lib "github.com/user/scraping-go/lib"
 	"github.com/yosssi/gohtml"
 )
 
 var (
-	layout                 = "./app/views/layout/base.tmpl"
-	SearchIndexTemplates   = []string{layout, "./app/views/search.tmpl"}
-	SearchConfirmTemplates = []string{layout, "./app/views/confirm.tmpl"}
+	SearchTemplates = []Template{
+		Template{
+			BaseTemplate: &SearchBaseTemplate{},
+			Name:         "search/index",
+			Files:        []string{"search.tmpl"},
+		},
+		Template{
+			BaseTemplate: &SearchBaseTemplate{},
+			Name:         "search/confirm",
+			Files:        []string{"confirm.tmpl"},
+		},
+	}
+
+	myValidate = new(lib.MyValidate).InitValidate()
 )
 
-type ConfirmForm struct {
-	// FormError
+type SearchBaseTemplate struct {
+}
 
-	Url   string `form:"url" binding:"required" validate:"required"`
-	Query string `form:"query" binding:"required" validate:"required"`
+func (t *SearchBaseTemplate) GetLayoutFile() string {
+	return "base.tmpl"
+}
+
+type ConfirmForm struct {
+	Url   string `form:"url" validate:"required" jaFieldName:"ユーアルエル"`
+	Query string `form:"query" validate:"required" jaFieldName:"クエリー"`
 	// Url   string `form:"url" binding:"required"`
 	// Query string `form:"query" binding:"required"`
 	// Url           string `form:"url" validate:"required"`
@@ -37,7 +50,9 @@ type ConfirmForm struct {
 }
 
 func SearchIndex(c *gin.Context) {
-	c.HTML(http.StatusOK, "search/index", gin.H{})
+	c.HTML(http.StatusOK, "search/index", gin.H{
+		"form": ConfirmForm{},
+	})
 }
 
 // func ListOfError(err error) (m map[string]string) {
@@ -48,89 +63,21 @@ func SearchIndex(c *gin.Context) {
 // 	}
 // }
 
-func TransFunc(ut ut.Translator, fe validator.FieldError) string {
-	fld, _ := ut.T(fe.Field())
-	t, err := ut.T(fe.Tag(), fld)
-	if err != nil {
-		return fe.(error).Error()
-	}
-	return t
-}
-
 func SearchConfirm(c *gin.Context) {
 	var form ConfirmForm
 
-	japanese := ja_JP.New()
-	uni := ut.New(japanese, japanese)
+	c.ShouldBind(&form)
 
-	trans, _ := uni.GetTranslator("ja_JP")
-	_ = trans.Add("ConfirmForm.Url", "フォームユーアルエル", false)
-	_ = trans.Add("Url", "ユーアルエル", false)
-	_ = trans.Add("Query", "クエリ", false)
-
-	validate := validator.New()
-
-	validate.RegisterTranslation("required", trans, func(ut ut.Translator) error {
-		return ut.Add("required", "{0}は必須項目です", false)
-	}, TransFunc)
-
-	// _ = trans.Add("Url", "ユーアルエル", false)
-	// _ = ja_translations.RegisterDefaultTranslations(validate, trans)
-
-	//
-	// japanese := ja_JP.New()
-	// uni := ut.New(japanese, japanese)
-	// trans, _ := uni.GetTranslator("ja_JP")
-
-	// validate := validator.New()
-	// _ = ja_translations.RegisterDefaultTranslations(validate, trans)
-	// _ = trans.Add("Url", "ユーアルエル", false)
-	//
-
-	// if err := c.BindQuery(&form); err != nil {
-	// 	c.Status(http.StatusBadRequest)
-	// 	return
-	// }
-
-	if err := c.ShouldBind(&form); err != nil {
-		fmt.Println(form)
-		fmt.Println(err)
-
-		errs := err.(validator.ValidationErrors)
-		fmt.Println(errs[0].Translate(trans))
-		// fmt.Println(errs[0].Translate(ja))
-
+	if err := myValidate.Validate.Struct(form); err != nil {
 		c.HTML(http.StatusOK, "search/index", gin.H{
 			"form": form,
-			"errs": err,
+			"errs": myValidate.GetErrorMessages(err),
 		})
-
-		// c.String(http.StatusBadRequest, "bad request")
 		return
 	}
 
-	// if err := validate.Struct(form); err != nil {
-	// 	fmt.Println(form)
-
-	// 	// if err := validate.Struct(form); err != nil {
-	// 	// if err := c.ShouldBind(&form); err != nil {
-	// 	errs := err.(validator.ValidationErrors)
-
-	// 	fmt.Println(errs)
-
-	// 	// fmt.Println(errs[0].Translate(trans))
-	// 	// fmt.Println(errs[0].Field())
-
-	// 	c.HTML(http.StatusOK, "search/index", gin.H{
-	// 		"form": form,
-	// 		"errs": errs,
-	// 	})
-	// 	return
-	// }
-
 	if !isValidURL(form.Url) {
-		formError := new(FormError)
-		formError.addMessage("URLが誤っています。")
+		// formError.addMessage("URLが誤っています。")
 		// validator.StructErrors
 		// c.HTML(http.StatusOK, "search/index", gin.H{"form": form, "errs": validator.StructErrors})
 		return
