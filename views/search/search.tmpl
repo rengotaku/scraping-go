@@ -8,13 +8,19 @@
       <form action="/search/confirm" method="post" name="searchForm">
         <div class="form-group">
           <label for="url">サイトのURL</label>
+          {{ if (index .messages "ConfirmForm.SearchForm.サイトのURL") }}
+          <small class="form-text text-danger">{{ index .messages "ConfirmForm.SearchForm.サイトのURL" }}</small>
+          {{ end }}
           <input type="text" class="form-control" id="url" placeholder="Url" name="url" value="{{ .form.Url }}">
-          <small class="form-text text-muted">スクレイプするURLを設定して下さい。</small>
+          <small class="form-text text-muted">スクレイプするURLを設定して下さい。<br>例えば、"https://www.amazon.co.jp/"</small>
         </div>
         <div class="form-group">
           <label for="url">比較する要素</label>
+          {{ if (index .messages "ConfirmForm.SearchForm.比較する要素") }}
+          <small class="form-text text-danger">{{ index .messages "ConfirmForm.SearchForm.サイトのURL" }}</small>
+          {{ end }}
           <input type="text" class="form-control" id="query" placeholder="Query" name="query" value="{{ .form.Query }}">
-          <small class="form-text text-muted">Chromeなどのブラウザで検証モードでセレクタをコピーしたものを貼り付けて下さい。</small>
+          <small class="form-text text-muted">Chromeなどのブラウザで検証モードでコピーしたセレクタを貼り付けて下さい。<br>例えば、"#nav-logo > a.nav-logo-link"</small>
         </div>
         <button type="submit" class="btn btn-primary">確認</button>
       </form>

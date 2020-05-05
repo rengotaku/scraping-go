@@ -5,6 +5,12 @@ import (
 	"html/template"
 	"strings"
 	"time"
+
+	"github.com/user/scraping-go/lib"
+)
+
+var (
+	myValidate = new(lib.MyValidate).InitValidate()
 )
 
 func FormatAsDate(t time.Time) string {
@@ -20,3 +26,16 @@ func Filter(str string) string {
 func HtmlSafe(html string) template.HTML {
 	return template.HTML(html)
 }
+
+// func GetMessage(messages map[string]string, key string) string {
+// 	return messages[key]
+// }
+
+// func GetMessage(messages map[string]string) string {
+// 	fmt.Println(messages)
+// 	return "few"
+// }
+
+// func HasMessage(err error, key string) bool {
+// 	return myValidate.HasErrorMessage(err, key)
+// }

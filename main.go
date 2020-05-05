@@ -24,6 +24,8 @@ func main() {
 func routing(r *gin.Engine) {
 	r.GET("/search", controllers.SearchIndex)
 	r.POST("/search/confirm", controllers.SearchConfirm)
+	r.POST("/search/last_check", controllers.SearchConfirmLast)
+	r.GET("/search/finish", controllers.SearchFinished)
 }
 
 func createRender() multitemplate.Render {
@@ -33,6 +35,8 @@ func createRender() multitemplate.Render {
 		// "formatAsDate": helpers.formatAsDate,
 		// "filter":       helpers.filter,
 		"htmlSafe": helpers.HtmlSafe,
+		// "getErrorMessage": helpers.GetMessage,
+		// "hasMessage":      helpers.HasMessage,
 	}
 
 	allT := []controllers.Template{}
