@@ -9,6 +9,7 @@ import (
 
 	controllers "github.com/user/scraping-go/app/controllers"
 	helpers "github.com/user/scraping-go/app/helpers"
+	models "github.com/user/scraping-go/app/models"
 )
 
 func main() {
@@ -17,6 +18,12 @@ func main() {
 	router.HTMLRender = createRender()
 
 	routing(router)
+
+	err := models.InitMigration()
+	if err != nil {
+		panic(err)
+		return
+	}
 
 	router.Run(":8080")
 }

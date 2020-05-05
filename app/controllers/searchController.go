@@ -8,11 +8,14 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 
 	"github.com/gocolly/colly/v2"
+	"github.com/user/scraping-go/app/models"
 	lib "github.com/user/scraping-go/lib"
 	"github.com/yosssi/gohtml"
 )
@@ -63,9 +66,10 @@ type ConfirmSendForm struct {
 }
 
 type FinishedForm struct {
-	Notifier      string `form:"notifier" validate:"required" jaFieldName:"通知方法"`
-	NotifierValue string `form:"notifier_value" validate:"required" jaFieldName:"通知方法のデータ"`
-	Interval      string `form:"interval" validate:"required" jaFieldName:"通知間隔"`
+	Notifier      string    `form:"notifier" validate:"required" jaFieldName:"通知方法"`
+	NotifierValue string    `form:"notifier_value" validate:"required" jaFieldName:"通知方法のデータ"`
+	Interval      string    `form:"interval" validate:"required" jaFieldName:"通知間隔"`
+	ExecutedAt    time.Time `form:"executed_at" jaFieldName:"最終実行日"`
 }
 
 type SlackParams struct {
@@ -84,7 +88,6 @@ func SearchConfirm(c *gin.Context) {
 
 	c.ShouldBind(&form)
 	messages := validateConfirm(c, &form)
-
 	if len(messages) > 0 {
 		c.HTML(http.StatusOK, "search/index", gin.H{
 			"form":     form,
@@ -115,20 +118,74 @@ func SearchConfirmLast(c *gin.Context) {
 		return
 	}
 
+	formatedTarEle := ""
+	for _, line := range strings.Split(form.TargetElement, "\n") {
+		formatedTarEle += strings.TrimSpace(line)
+	}
+
+	reserve := models.Reserve{
+		Url:           form.Url,
+		HtmlSelector:  form.Query,
+		NotifierValue: form.NotifierValue,
+		PreHtml:       formatedTarEle,
+		ExecutedAt:    time.Now(),
+	}
+
+	if !reserve.SetNotifier(form.Notifier) {
+		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
+		return
+	}
+
+	if !reserve.SetInterval(form.Interval) {
+		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
+		return
+	}
+
+	db, err := models.Connection()
+	if err != nil {
+		panic(err)
+		return
+	}
+	defer db.Close()
+	db.Create(&reserve)
+
 	// HACK: should use r.HandleContext(c) better
-	path := fmt.Sprintf("/search/finish?notifier=%s&notifier_value=%s&interval=%s", form.Notifier, form.NotifierValue, form.Interval)
+	path := fmt.Sprintf("/search/finish?reserved_key=%s", reserve.UUID)
 	c.Redirect(http.StatusMovedPermanently, path)
 }
 
 func SearchFinished(c *gin.Context) {
-	var form FinishedForm
-
-	c.ShouldBind(&form)
-	if err := myValidate.Validate.Struct(form); err != nil {
-		fmt.Println(err)
+	uuid := c.Query("reserved_key")
+	if len(uuid) == 0 {
 		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
 		return
 	}
+
+	db, err := models.Connection()
+	if err != nil {
+		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
+		return
+	}
+	defer db.Close()
+
+	reserve := models.Reserve{}
+	db.Find(&reserve, &models.Reserve{UUID: uuid, Model: gorm.Model{DeletedAt: nil}})
+	if reserve.ID == 0 {
+		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
+		return
+	}
+
+	form := ConfirmSendForm{}
+	form.Url = reserve.Url
+	form.Query = reserve.HtmlSelector
+	// HACK: formated html is better
+	form.TargetElement = reserve.PreHtml
+	// TODO: extra text from html
+	// form.TargetElementText = reserve.PreHtml
+	form.Notifier = reserve.GetNotifierAsString().String
+	form.NotifierValue = reserve.NotifierValue
+	form.Interval = reserve.GetIntervalAsString().String
+	form.ExecutedAt = reserve.ExecutedAt
 
 	c.HTML(http.StatusOK, "search/finished", gin.H{"form": form})
 }
@@ -199,10 +256,14 @@ func validateConfirmLast(c *gin.Context, form *ConfirmSendForm) map[string]strin
 
 	switch notifer := form.Notifier; notifer {
 	case "email":
-		return myValidate.PushErrorMessage(nil, "ConfirmSendForm.通知方法", "通知方法が不正です。")
+		return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法", "通知方法が不正です。")
 	case "slack":
 		if !isValidURL(form.NotifierValue) {
-			return myValidate.PushErrorMessage(nil, "ConfirmSendForm.通知方法のデータ", "WebhookのURLの形式が不正です。")
+			return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法のデータ", "WebhookのURLの形式が不正です。")
+		}
+
+		if !strings.HasPrefix(form.NotifierValue, "https://hooks.slack.com/services") {
+			return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法のデータ", "WebhookのURLの形式が不正です。")
 		}
 
 		bjsonStr, _ := json.Marshal(SlackParams{Text: "Web diff - 確認用通知"})
@@ -213,11 +274,11 @@ func validateConfirmLast(c *gin.Context, form *ConfirmSendForm) map[string]strin
 		client := &http.Client{}
 		resp, err := client.Do(r)
 		if err != nil || resp.StatusCode != 200 {
-			return myValidate.PushErrorMessage(nil, "ConfirmSendForm.通知方法のデータ", "指定のWebhookに通知ができません。")
+			return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法のデータ", "指定のWebhookに通知ができません。")
 		}
 		defer resp.Body.Close()
 	default:
-		return myValidate.PushErrorMessage(nil, "ConfirmSendForm.通知方法", "通知方法が不正です。")
+		return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法", "通知方法が不正です。")
 	}
 
 	return map[string]string{}

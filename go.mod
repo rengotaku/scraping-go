@@ -18,6 +18,7 @@ require (
 	github.com/gocolly/colly/v2 v2.0.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/jinzhu/gorm v1.9.12
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/nicksnyder/go-i18n v1.10.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

@@ -1,59 +1,48 @@
 {{define "content"}}
-
-<div class="container">
-  <div class="row justify-content-md-center">
-    <div class="col col-lg-2">
-    </div>
-    <div class="col-md-auto">
-      <form action="/search/last_check" method="post" name="confirmSendForm">
-        <div class="form-group">
-          <h2>サイトのURL</h2>
-          <input type="text" value="{{ .form.Url }}" class="form-control" id="url" name="url" placeholder="Url" readonly>
-        </div>
-        <div class="form-group">
-          <h2>比較する要素</h2>
-          <input type="text" value="{{ .form.Query }}" class="form-control" id="query" name="query" placeholder="Query" readonly>
-        </div>
-        <div class="form-group">
-          <h2>監視する要素</h2>
-          <textarea class="form-control" id="target-element" name="target_element" rows="4" cols="40" readonly>{{ .form.TargetElement }}</textarea>
-        </div>
-        <div class="form-group">
-          <h2>監視するテキスト</h2>
-          <textarea class="form-control" id="target-element-text" name="target_element_text" rows="4" cols="40" placeholder="Target Element" readonly>{{ .form.TargetElementText }}</textarea>
-        </div>
-        <div class="form-group">
-          <h2>通知先</h2>
-          {{ if (index .messages "ConfirmSendForm.通知方法") }}
-          <small class="form-text text-danger">{{ index .messages "ConfirmSendForm.通知方法" }}</small>
-          {{ end }}
-          <select id="notifier" name="notifier">
-            <option value="slack" selected>Slack</option>
-            <option value="email" {{ if eq .form.Notifier "email" }}selected{{ else }}disabled{{ end }}>Eメール</option>
-          </select></p>
-          {{ if (index .messages "ConfirmSendForm.通知方法のデータ") }}
-          <small class="form-text text-danger">{{ index .messages "ConfirmSendForm.通知方法のデータ" }}</small>
-          {{ end }}
-          <input type="text" class="form-control" id="notifier-value" name="notifier_value" value="{{ .form.NotifierValue }}" placeholder="通知先情報">
-          <small class="form-text text-muted">Eメールを選択時はメールアドレス(example@example.com)を入力下さい。<br>Slackを選択時はチャンネルとWebhook(https://hooks.slack.com/services/XXXX/
-XXXX)を入力下さい。</small>
-        </div>
-        <div class="form-group">
-          <h2>通知間隔</h2>
-          {{ if (index .messages "ConfirmSendForm.FinishedForm.通知間隔") }}
-          <small class="form-text text-danger">{{ index .messages "ConfirmSendForm.FinishedForm.通知間隔" }}</small>
-          {{ end }}
-          <select id="interval" name="interval">
-            <option value="day" selected>１日毎</option>
-            <option value="6hour" {{ if eq .form.Interval "hour" }}selected{{ else }}disabled{{ end }}>6時間毎</option>
-          </select></p>
-        </div>
-        <button type="submit" class="btn btn-primary">確定</button>
-        <button type="button" class="btn btn-secondary" onclick="history.back();" >戻る</button>
-      </form>
-    </div>
-    <div class="col col-lg-2">
-    </div>
+<form action="/search/last_check" method="post" name="confirmSendForm">
+  <div class="form-group">
+    <label>サイトのURL</label>
+    <input type="text" value="{{ .form.Url }}" class="form-control" id="url" name="url" placeholder="Url" readonly>
   </div>
-</div>
+  <div class="form-group">
+    <label>比較する要素</label>
+    <input type="text" value="{{ .form.Query }}" class="form-control" id="query" name="query" placeholder="Query" readonly>
+  </div>
+  <div class="form-group">
+    <label>監視する要素</label>
+    <textarea class="form-control" id="target-element" name="target_element" rows="4" cols="40" readonly>{{ .form.TargetElement }}</textarea>
+  </div>
+  <div class="form-group">
+    <label>監視するテキスト</label>
+    <textarea class="form-control" id="target-element-text" name="target_element_text" rows="4" cols="40" placeholder="Target Element" readonly>{{ .form.TargetElementText }}</textarea>
+  </div>
+  <div class="form-group">
+    <label>通知先</label>
+    {{ if (index .messages "ConfirmSendForm.FinishedForm.通知方法") }}
+    <small class="form-text text-danger">{{ index .messages "ConfirmSendForm.FinishedForm.通知方法" }}</small>
+    {{ end }}
+    <select id="notifier" name="notifier">
+      <option value="slack" selected>Slack</option>
+      <option value="email" {{ if eq .form.Notifier "email" }}selected{{ else }}disabled{{ end }}>Eメール</option>
+    </select></p>
+    {{ if (index .messages "ConfirmSendForm.FinishedForm.通知方法のデータ") }}
+    <small class="form-text text-danger">{{ index .messages "ConfirmSendForm.FinishedForm.通知方法のデータ" }}</small>
+    {{ end }}
+    <input type="text" class="form-control" id="notifier-value" name="notifier_value" value="{{ .form.NotifierValue }}" placeholder="通知先情報">
+    <small class="form-text text-muted">Eメールを選択時はメールアドレス(example@example.com)を入力下さい。<br>Slackを選択時はチャンネルとWebhook(https://hooks.slack.com/services/XXXX/
+XXXX)を入力下さい。</small>
+  </div>
+  <div class="form-group">
+    <label>通知間隔</label>
+    {{ if (index .messages "ConfirmSendForm.FinishedForm.通知間隔") }}
+    <small class="form-text text-danger">{{ index .messages "ConfirmSendForm.FinishedForm.通知間隔" }}</small>
+    {{ end }}
+    <select id="interval" name="interval">
+      <option value="day" selected>１日毎</option>
+      <option value="harf_hour" {{ if eq .form.Interval "hour" }}selected{{ else }}disabled{{ end }}>6時間毎</option>
+    </select></p>
+  </div>
+  <button type="submit" class="btn btn-primary">確定</button>
+  <button type="button" class="btn btn-secondary" onclick="history.back();" >戻る</button>
+</form>
 {{end}}

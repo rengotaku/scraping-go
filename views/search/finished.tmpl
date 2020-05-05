@@ -1,26 +1,31 @@
 {{define "content"}}
-
-<div class="container">
-  <div class="row justify-content-md-center">
-    <div class="col col-lg-2">
-    </div>
-    <div class="col-md-auto">
-      <form action="#" method="get">
-        <div class="form-text text-success">要素に変更があった場合は、下記に通知します。</div>
-        <div class="form-group">
-          <h2>通知先</h2>
-          <label class="form-text">{{ if eq .form.Notifier "slack" }}Slack{{ else if eq .form.Notifier "email" }}Eメール{{ end }}</label>
-          <label class="form-text">{{ .form.NotifierValue }}</label>
-        </div>
-        <div class="form-group">
-          <h2>通知間隔</h2>
-          <label>{{ if eq .form.Interval "day" }}１日毎{{ else if eq .form.Interval "6hour" }}6時間毎{{ end }}</label>
-        </div>
-        <a href="/search" class="btn btn-secondary">TOPへ戻る</a>
-      </form>
-    </div>
-    <div class="col col-lg-2">
-    </div>
+<form action="#" method="get">
+  <div class="form-text text-success">登録内容</div>
+  <div class="form-group">
+    <label class="form-text">サイトのURL</label>
+    <label>{{ .form.Url }}</label>
   </div>
-</div>
+  <div class="form-group">
+    <label class="form-text">比較する要素</label>
+    <label>{{ .form.Query }}</label>
+  </div>
+  <div class="form-group">
+    <label class="form-text">監視する要素</label>
+    <textarea class="form-control" id="target-element" name="target_element" rows="4" cols="40" readonly>{{ .form.TargetElement }}</textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-text">監視するテキスト</label>
+    <textarea class="form-control" id="target-element-text" name="target_element_text" rows="4" cols="40" placeholder="Target Element" readonly>{{ .form.TargetElementText }}</textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-text">通知先</label>
+    <label class="label label-info">{{ if eq .form.Notifier "slack" }}Slack{{ else if eq .form.Notifier "email" }}Eメール{{ end }}</label>
+    <label>{{ .form.NotifierValue }}</label>
+  </div>
+  <div class="form-group">
+    <label class="form-text">通知間隔</label>
+    <label>{{ if eq .form.Interval "day" }}１日毎{{ else if eq .form.Interval "6hour" }}6時間毎{{ end }}</label>
+  </div>
+  <a href="/search" class="btn btn-secondary">TOPへ戻る</a>
+</form>
 {{end}}
