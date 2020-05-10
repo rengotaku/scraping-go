@@ -1,23 +1,19 @@
 package controllers
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
+	"github.com/antchfx/htmlquery"
+	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 
-	"github.com/gocolly/colly/v2"
 	"github.com/user/scraping-go/app/models"
 	lib "github.com/user/scraping-go/lib"
-	"github.com/yosssi/gohtml"
 )
 
 var (
@@ -49,8 +45,12 @@ func (t *SearchBaseTemplate) GetLayoutFile() string {
 	return "base.tmpl"
 }
 
+func (t *SearchBaseTemplate) GetCssFile() string {
+	return "base.tmpl"
+}
+
 type SearchForm struct {
-	Url   string `form:"url" validate:"required" jaFieldName:"サイトのURL"`
+	Url   string `form:"url" validate:"required" jaFieldName:"WebのURL"`
 	Query string `form:"query" validate:"required" jaFieldName:"比較する要素"`
 }
 
@@ -72,14 +72,11 @@ type FinishedForm struct {
 	ExecutedAt    time.Time `form:"executed_at" jaFieldName:"最終実行日"`
 }
 
-type SlackParams struct {
-	Text string `json:"text"`
-}
-
 func SearchIndex(c *gin.Context) {
 	c.HTML(http.StatusOK, "search/index", gin.H{
 		"form":     SearchForm{},
 		"messages": myValidate.GetErrorMessages(nil),
+		"csrf":     lib.GetCsrfToken(c),
 	})
 }
 
@@ -92,6 +89,7 @@ func SearchConfirm(c *gin.Context) {
 		c.HTML(http.StatusOK, "search/index", gin.H{
 			"form":     form,
 			"messages": messages,
+			"csrf":     lib.GetCsrfToken(c),
 		})
 		return
 	}
@@ -99,9 +97,17 @@ func SearchConfirm(c *gin.Context) {
 	var resForm ConfirmSendForm = ConfirmSendForm{}
 	resForm.ConfirmForm = form
 
+	session := sessions.Default(c)
+	notifier, ok := session.Get("notifier").(string)
+	if ok && len(notifier) > 0 {
+		resForm.Notifier = notifier
+		resForm.NotifierValue = session.Get("notifier_value").(string)
+	}
+
 	c.HTML(http.StatusOK, "search/confirm", gin.H{
 		"form":     resForm,
 		"messages": myValidate.GetErrorMessages(nil),
+		"csrf":     lib.GetCsrfToken(c),
 	})
 }
 
@@ -128,6 +134,7 @@ func SearchConfirmLast(c *gin.Context) {
 		HtmlSelector:  form.Query,
 		NotifierValue: form.NotifierValue,
 		PreHtml:       formatedTarEle,
+		UserAgent:     c.GetHeader("User-Agent"), // Should relay this from search web site.
 		ExecutedAt:    time.Now(),
 	}
 
@@ -143,11 +150,17 @@ func SearchConfirmLast(c *gin.Context) {
 
 	db, err := models.Connection()
 	if err != nil {
-		panic(err)
+		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
 		return
 	}
 	defer db.Close()
 	db.Create(&reserve)
+
+	session := sessions.Default(c)
+	session.Set("notifier", form.Notifier)
+	session.Set("notifier_value", form.NotifierValue)
+	session.AddFlash("1", "complete_messge_flag")
+	session.Save()
 
 	// HACK: should use r.HandleContext(c) better
 	path := fmt.Sprintf("/search/finish?reserved_key=%s", reserve.UUID)
@@ -175,19 +188,30 @@ func SearchFinished(c *gin.Context) {
 		return
 	}
 
+	doc, err := htmlquery.Parse(strings.NewReader(reserve.PreHtml))
+
 	form := ConfirmSendForm{}
 	form.Url = reserve.Url
 	form.Query = reserve.HtmlSelector
 	// HACK: formated html is better
 	form.TargetElement = reserve.PreHtml
-	// TODO: extra text from html
-	// form.TargetElementText = reserve.PreHtml
+	form.TargetElementText = htmlquery.InnerText(doc)
 	form.Notifier = reserve.GetNotifierAsString().String
 	form.NotifierValue = reserve.NotifierValue
 	form.Interval = reserve.GetIntervalAsString().String
 	form.ExecutedAt = reserve.ExecutedAt
 
-	c.HTML(http.StatusOK, "search/finished", gin.H{"form": form})
+	session := sessions.Default(c)
+	var message string
+	if len(session.Flashes("complete_messge_flag")) > 0 {
+		message = "登録しました。"
+		session.Save()
+	}
+
+	c.HTML(http.StatusOK, "search/finished", gin.H{
+		"form":    form,
+		"message": message,
+	})
 }
 
 func validateConfirm(c *gin.Context, form *ConfirmForm) map[string]string {
@@ -196,55 +220,25 @@ func validateConfirm(c *gin.Context, form *ConfirmForm) map[string]string {
 	}
 
 	if !isValidURL(form.Url) {
-		return myValidate.PushErrorMessage(nil, "ConfirmForm.SearchForm.サイトのURL", "URLの形式が不正です。")
+		return myValidate.PushErrorMessage(nil, "ConfirmForm.SearchForm.WebのURL", "URLの形式が不正です。")
 	}
 
-	co := colly.NewCollector()
-	co.UserAgent = c.GetHeader("User-Agent")
-
-	var statusCode int
-	co.OnHTML("body", func(e *colly.HTMLElement) {
-		e.DOM.Find("script").Each(func(i int, s *goquery.Selection) {
-			s.Remove()
-		})
-		e.DOM.Find("style").Each(func(i int, s *goquery.Selection) {
-			s.Remove()
-		})
-		pDom := e.DOM.Find(form.Query).Parent()
-
-		html, _ := pDom.Html()
-		form.TargetElement = gohtml.Format(html)
-
-		txt := pDom.Text()
-		lines := []string{}
-		for _, v := range strings.Split(txt, "\n") {
-			tTxt := strings.TrimSpace(v)
-			if len(tTxt) > 0 {
-				lines = append(lines, tTxt)
-			}
-		}
-
-		form.TargetElementText = strings.Join(lines, "\n")
-	})
-
-	// extract status code
-	co.OnResponse(func(r *colly.Response) {
-		// log.Println("response received", r.StatusCode)
-		statusCode = r.StatusCode
-	})
-	co.OnError(func(r *colly.Response, err error) {
-		log.Println("error:", r.StatusCode, err)
-		// p.StatusCode = r.StatusCode
-	})
-
-	co.Visit(form.Url)
-
-	if statusCode != 200 {
-		return myValidate.PushErrorMessage(nil, "ConfirmForm.SearchForm.サイトのURL", "指定のサイトが開けません。")
+	wa := lib.WebAnalyser{
+		UserAgent: c.GetHeader("User-Agent"),
+		Url:       form.Url,
+		Query:     form.Query,
 	}
-	if form.TargetElement == "" {
-		return myValidate.PushErrorMessage(nil, "ConfirmForm.SearchForm.サイトのURL", "該当する要素が存在しません。")
+
+	res := wa.Search()
+	if res.StatusCode != 200 {
+		return myValidate.PushErrorMessage(nil, "ConfirmForm.SearchForm.WebのURL", "指定のサイトが開けません。")
 	}
+	if res.TargetElement == "" {
+		return myValidate.PushErrorMessage(nil, "ConfirmForm.SearchForm.WebのURL", "該当する要素が存在しません。")
+	}
+
+	form.TargetElement = res.TargetElement
+	form.TargetElementText = res.TargetElementText
 
 	return map[string]string{}
 }
@@ -266,17 +260,9 @@ func validateConfirmLast(c *gin.Context, form *ConfirmSendForm) map[string]strin
 			return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法のデータ", "WebhookのURLの形式が不正です。")
 		}
 
-		bjsonStr, _ := json.Marshal(SlackParams{Text: "Web diff - 確認用通知"})
-
-		r, _ := http.NewRequest("POST", form.NotifierValue, bytes.NewBuffer(bjsonStr))
-		r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-		client := &http.Client{}
-		resp, err := client.Do(r)
-		if err != nil || resp.StatusCode != 200 {
+		if !lib.SendToSlack(form.NotifierValue, "Scraping Notifer - 確認用通知") {
 			return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法のデータ", "指定のWebhookに通知ができません。")
 		}
-		defer resp.Body.Close()
 	default:
 		return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法", "通知方法が不正です。")
 	}

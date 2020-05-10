@@ -7,6 +7,7 @@ import (
 
 type BaseTemplate interface {
 	GetLayoutFile() string
+	GetCssFile() string
 }
 
 // type ControllerTemplates []ControllerTemplate
@@ -30,8 +31,12 @@ func (t *Template) getType() string {
 	return strings.ToLower(name[0:strings.Index(name, "BaseTemplate")])
 }
 
-func (t *Template) GetFullLayoutes() string {
+func (t *Template) GetFullLayoute() string {
 	return "./views/layout/" + t.BaseTemplate.GetLayoutFile()
+}
+
+func (t *Template) GetFullCss() string {
+	return "./views/css/" + t.BaseTemplate.GetCssFile()
 }
 
 func (t *Template) GetFullViews() []string {

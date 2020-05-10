@@ -7,7 +7,11 @@
   <meta name="description" content="">
   <meta name="keywords" content="">
 
+  <link href='https://fonts.googleapis.com/css?family=Oswald' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <style>
+    {{template "css" .}}
+  </style>
 </head>
 <body>
   <div class="container">
@@ -16,7 +20,28 @@
       </div>
 
       <div class="col-md-auto">
-        {{template "content" .}}
+        <div class="card my-card">
+          <div class="card-body">
+            <div class="typewriter" style="text-align:center;">
+              <h1>Scraping Notifer</h1>
+              <h6 style="transform: skewY(-10deg);">指定したサイトの要素に変化があれば通知をします。</h6>
+            </div>
+          </div>
+        </div>
+
+        <div class="card my-card">
+          <div class="card-body">
+            {{template "content" .}}
+          </div>
+        </div>
+
+        <div class="card my-card">
+          <div class="card-body">
+            <div class="typewriter">
+              <div>Here was made for learning gin.</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="col col-lg-2">

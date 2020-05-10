@@ -1,31 +1,42 @@
 {{define "content"}}
+{{ if .message }}
+<div class="progress my-progress">
+  <div class="progress-bar" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+</div>
+{{ end }}
+
 <form action="#" method="get">
-  <div class="form-text text-success">登録内容</div>
+  <h2>登録内容</h2>
+  {{ if .message }}
+  <div class="alert alert-danger" role="alert">
+    {{ .message }}
+  </div>
+  {{ end }}
   <div class="form-group">
-    <label class="form-text">サイトのURL</label>
-    <label>{{ .form.Url }}</label>
+    <label class="my-label">WebのURL</label>
+    <div class="scroll">{{ .form.Url }}</div>
   </div>
   <div class="form-group">
-    <label class="form-text">比較する要素</label>
-    <label>{{ .form.Query }}</label>
+    <label class="my-label">比較する要素</label>
+    <div class="scroll">{{ .form.Query }}</div>
   </div>
   <div class="form-group">
-    <label class="form-text">監視する要素</label>
+    <label class="my-label">監視する要素</label>
     <textarea class="form-control" id="target-element" name="target_element" rows="4" cols="40" readonly>{{ .form.TargetElement }}</textarea>
   </div>
   <div class="form-group">
-    <label class="form-text">監視するテキスト</label>
+    <label class="my-label">監視するテキスト</label>
     <textarea class="form-control" id="target-element-text" name="target_element_text" rows="4" cols="40" placeholder="Target Element" readonly>{{ .form.TargetElementText }}</textarea>
   </div>
   <div class="form-group">
-    <label class="form-text">通知先</label>
+    <label class="my-label">通知先</label>
     <label class="label label-info">{{ if eq .form.Notifier "slack" }}Slack{{ else if eq .form.Notifier "email" }}Eメール{{ end }}</label>
-    <label>{{ .form.NotifierValue }}</label>
+    <div class="scroll">{{ .form.NotifierValue }}</div>
   </div>
   <div class="form-group">
-    <label class="form-text">通知間隔</label>
-    <label>{{ if eq .form.Interval "day" }}１日毎{{ else if eq .form.Interval "6hour" }}6時間毎{{ end }}</label>
+    <label class="my-label">通知間隔</label>
+    <div class="scroll">{{ if eq .form.Interval "day" }}１日毎{{ else if eq .form.Interval "6hour" }}6時間毎{{ end }}</div>
   </div>
-  <a href="/search" class="btn btn-secondary">TOPへ戻る</a>
+  <a href="/search" class="btn btn-secondary my-btn">TOPへ戻る</a>
 </form>
 {{end}}

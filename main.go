@@ -5,15 +5,29 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/contrib/renders/multitemplate"
+	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 
 	controllers "github.com/user/scraping-go/app/controllers"
 	helpers "github.com/user/scraping-go/app/helpers"
 	models "github.com/user/scraping-go/app/models"
+	lib "github.com/user/scraping-go/lib"
 )
 
 func main() {
 	router := gin.Default()
+
+	// HACK: laod from config
+	store := sessions.NewCookieStore([]byte("7c392fb14fe25f428f3194f59b5b01e1c6adf8702e41755abb774812de3238dc"))
+	router.Use(sessions.Sessions("scraping", store))
+	// HACK: should split another file.
+	router.Use(lib.CsrfMiddleware(lib.CsrfOptions{
+		Secret: "49da0b13f4aa987332efec012e370bf7",
+		ErrorFunc: func(c *gin.Context) {
+			c.String(400, "CSRF token mismatch")
+			c.Abort()
+		},
+	}))
 
 	router.HTMLRender = createRender()
 
@@ -51,7 +65,7 @@ func createRender() multitemplate.Render {
 
 	for _, t := range allT {
 		// Layout must be first
-		addFromFilesFuncs(r, t.Name, funcMap, append([]string{t.GetFullLayoutes()}, t.GetFullViews()...)...)
+		addFromFilesFuncs(r, t.Name, funcMap, append([]string{t.GetFullLayoute(), t.GetFullCss()}, t.GetFullViews()...)...)
 	}
 
 	return r

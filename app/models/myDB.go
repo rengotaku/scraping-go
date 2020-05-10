@@ -18,6 +18,7 @@ func InitMigration() error {
 	defer db.Close()
 
 	db.AutoMigrate(&Reserve{})
+	db.AutoMigrate(&JobHistory{})
 
 	return nil
 }

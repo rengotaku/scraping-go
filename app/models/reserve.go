@@ -16,11 +16,13 @@ type Reserve struct {
 	UUID          string `gorm:"type:varchar(100);"`
 	Url           string `gorm:"type:text;"`
 	HtmlSelector  string `gorm:"type:text;"`
+	UserAgent     string
 	Notifier      int
 	NotifierValue string `gorm:"type:text;"`
 	PreHtml       string `gorm:"type:text;"`
 	Interval      int
 	ExecutedAt    time.Time
+	JobHistories  []JobHistory
 }
 
 func (m *Reserve) AfterCreate(scope *gorm.Scope) (err error) {
