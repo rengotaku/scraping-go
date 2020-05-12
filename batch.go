@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	cron "github.com/robfig/cron/v3"
@@ -11,18 +12,23 @@ import (
 )
 
 func main() {
-	cronExec()
-	// checkReserves()
+	// cronExec()
+	checkReserves()
 }
 
 func cronExec() {
 	c := cron.New()
-	c.AddFunc("@daily", checkReserves)
+	c.AddFunc("@hourly", checkReserves)
+	// c.AddFunc("@daily", checkReserves)
+
+	fmt.Println(fmt.Sprintf("start cron - %s", time.Now().String()))
 
 	c.Run()
 }
 
 func checkReserves() {
+	fmt.Println(fmt.Sprintf("start checkReserves - %s", time.Now().String()))
+
 	db, err := models.Connection()
 	if err != nil {
 		panic(err)
@@ -32,6 +38,8 @@ func checkReserves() {
 
 	reserves := []models.Reserve{}
 	db.Find(&reserves, &models.Reserve{Model: gorm.Model{DeletedAt: nil}})
+
+	fmt.Println(fmt.Sprintf("target records - %d", len(reserves)))
 
 	// should split array such as using offset
 	for _, reserve := range reserves {
@@ -49,12 +57,12 @@ func checkReserves() {
 			}
 		}
 
-		if errCnt > 0 && len(jobHistories) == errCnt {
+		if errCnt >= 3 && len(jobHistories) == errCnt {
 			db.Delete(&reserve)
 
 			switch notifer := reserve.Notifier; notifer {
 			case 1:
-				if !lib.SendToSlack(reserve.NotifierValue, fmt.Sprintf("Scraping Notifer - %s 指定のサイトがスクレイピングできません。再度、登録をし直して下さい。", reserve.Url)) {
+				if !lib.SendToSlack(reserve.NotifierValue, fmt.Sprintf("Scraping Notifer - %s はスクレイピングできません。再度、登録をし直して下さい。", reserve.Url)) {
 					// nothing
 				}
 			case 2:
@@ -81,30 +89,48 @@ func checkReserves() {
 
 		if history.StatusCode == 200 {
 			formatedTarEle := ""
-			for _, line := range strings.Split(res.TargetElement, "\n") {
-				formatedTarEle += strings.TrimSpace(line)
-			}
 
-			if formatedTarEle != reserve.PreHtml {
-				history.Html = formatedTarEle
-				reserve.PreHtml = formatedTarEle
+			if res.TargetElement != "" {
+				for _, line := range strings.Split(res.TargetElement, "\n") {
+					formatedTarEle += strings.TrimSpace(line)
+				}
 
-				switch notifer := reserve.Notifier; notifer {
-				case 1:
-					if lib.SendToSlack(reserve.NotifierValue, fmt.Sprintf("Scraping Notifer - %s に変更がありました。", reserve.Url)) {
-						history.IsNotice = true
-					} else {
+				if formatedTarEle != reserve.PreHtml {
+					history.Html = formatedTarEle
+					reserve.PreHtml = formatedTarEle
+
+					switch notifer := reserve.Notifier; notifer {
+					case 1:
+						if lib.SendToSlack(reserve.NotifierValue, fmt.Sprintf("Scraping Notifer - %s に変更がありました。", reserve.Url)) {
+							history.IsNotice = true
+						} else {
+							history.IsNotice = false
+						}
+					case 2:
+						history.IsNotice = false
+					default:
 						history.IsNotice = false
 					}
-				case 2:
-					history.IsNotice = false
-				default:
-					history.IsNotice = false
 				}
 			}
 		}
 
-		db.Create(&history)
-		db.Save(&reserve)
+		err = db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Save(&reserve).Error; err != nil {
+				return err
+			}
+
+			if err := tx.Create(&history).Error; err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			fmt.Println(fmt.Sprintf("予期しないエラーが発生しました: %s", err))
+			return
+		}
+
 	}
 }

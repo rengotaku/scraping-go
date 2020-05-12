@@ -139,22 +139,47 @@ func SearchConfirmLast(c *gin.Context) {
 	}
 
 	if !reserve.SetNotifier(form.Notifier) {
+		fmt.Println(fmt.Sprintf("不正なパラメーター %s が設定されました。", form.Notifier))
 		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
 		return
 	}
 
 	if !reserve.SetInterval(form.Interval) {
+		fmt.Println(fmt.Sprintf("不正なパラメーター %s が設定されました。", form.Interval))
 		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
 		return
 	}
 
+	history := models.JobHistory{
+		Reserve:    reserve,
+		StatusCode: 200,
+		Html:       formatedTarEle,
+		IsNotice:   true,
+	}
+
 	db, err := models.Connection()
 	if err != nil {
+		fmt.Println(err)
 		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
 		return
 	}
 	defer db.Close()
-	db.Create(&reserve)
+	err = db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&reserve).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Create(&history).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		fmt.Println(err)
+		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
+		return
+	}
 
 	session := sessions.Default(c)
 	session.Set("notifier", form.Notifier)
@@ -176,6 +201,7 @@ func SearchFinished(c *gin.Context) {
 
 	db, err := models.Connection()
 	if err != nil {
+		fmt.Println(err)
 		c.String(http.StatusInternalServerError, "予期しないエラーが発生しました。")
 		return
 	}
@@ -234,7 +260,7 @@ func validateConfirm(c *gin.Context, form *ConfirmForm) map[string]string {
 		return myValidate.PushErrorMessage(nil, "ConfirmForm.SearchForm.WebのURL", "指定のサイトが開けません。")
 	}
 	if res.TargetElement == "" {
-		return myValidate.PushErrorMessage(nil, "ConfirmForm.SearchForm.WebのURL", "該当する要素が存在しません。")
+		return myValidate.PushErrorMessage(nil, "ConfirmForm.SearchForm.比較する要素", "該当する要素が存在しません。")
 	}
 
 	form.TargetElement = res.TargetElement
@@ -256,7 +282,8 @@ func validateConfirmLast(c *gin.Context, form *ConfirmSendForm) map[string]strin
 			return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法のデータ", "WebhookのURLの形式が不正です。")
 		}
 
-		if !strings.HasPrefix(form.NotifierValue, "https://hooks.slack.com/services") {
+		slackURL := "https://hooks.slack.com/services/"
+		if !strings.HasPrefix(form.NotifierValue, slackURL) || form.NotifierValue == slackURL {
 			return myValidate.PushErrorMessage(nil, "ConfirmSendForm.FinishedForm.通知方法のデータ", "WebhookのURLの形式が不正です。")
 		}
 

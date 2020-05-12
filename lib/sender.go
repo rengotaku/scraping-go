@@ -10,6 +10,7 @@ type SlackParams struct {
 	Text string `json:"text"`
 }
 
+// FIXME: can regist such as https://hooks.slack.com/services/feffewf/few. verify form of response.
 func SendToSlack(webhook string, message string) bool {
 	bjsonStr, _ := json.Marshal(SlackParams{Text: message})
 

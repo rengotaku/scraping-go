@@ -46,7 +46,7 @@ XXXX)を入力下さい。</small> -->
       <option value="harf_hour" {{ if eq .form.Interval "hour" }}selected{{ else }}disabled{{ end }}>6時間毎</option>
     </select></p>
   </div>
-  <button type="submit" class="btn btn-danger my-btn">確定</button>
+  <button type="submit" class="btn btn-danger my-btn" onclick="this.disabled=true;this.form.submit();">確定</button>
   <button type="button" class="btn btn-secondary my-btn" onclick="history.back();" >戻る</button>
   <input type="hidden" name="_csrf" value="{{ .csrf }}">
 </form>

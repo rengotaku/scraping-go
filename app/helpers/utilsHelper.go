@@ -27,6 +27,11 @@ func HtmlSafe(html string) template.HTML {
 	return template.HTML(html)
 }
 
+func MaskSlackWebHook(str string) string {
+	baseUrl := "https://hooks.slack.com/services/"
+	return baseUrl + "****/****" + str[len(str)-4:len(str)-1]
+}
+
 // func GetMessage(messages map[string]string, key string) string {
 // 	return messages[key]
 // }

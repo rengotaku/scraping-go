@@ -55,7 +55,8 @@ func createRender() multitemplate.Render {
 	funcMap := template.FuncMap{
 		// "formatAsDate": helpers.formatAsDate,
 		// "filter":       helpers.filter,
-		"htmlSafe": helpers.HtmlSafe,
+		"htmlSafe":         helpers.HtmlSafe,
+		"maskSlackWebHook": helpers.MaskSlackWebHook,
 		// "getErrorMessage": helpers.GetMessage,
 		// "hasMessage":      helpers.HasMessage,
 	}
