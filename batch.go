@@ -11,6 +11,10 @@ import (
 	lib "github.com/user/scraping-go/lib"
 )
 
+var (
+	maxHistoryNum = 3
+)
+
 func main() {
 	// cronExec()
 	checkReserves()
@@ -18,8 +22,7 @@ func main() {
 
 func cronExec() {
 	c := cron.New()
-	c.AddFunc("@hourly", checkReserves)
-	// c.AddFunc("@daily", checkReserves)
+	c.AddFunc("@daily", checkReserves)
 
 	fmt.Println(fmt.Sprintf("start cron - %s", time.Now().String()))
 
@@ -27,7 +30,8 @@ func cronExec() {
 }
 
 func checkReserves() {
-	fmt.Println(fmt.Sprintf("start checkReserves - %s", time.Now().String()))
+	executedAt := time.Now()
+	fmt.Println(fmt.Sprintf("start checkReserves - %s", executedAt.String()))
 
 	db, err := models.Connection()
 	if err != nil {
@@ -44,7 +48,7 @@ func checkReserves() {
 	// should split array such as using offset
 	for _, reserve := range reserves {
 		var jobHistories []models.JobHistory
-		db.Order("id desc").Limit(3).Find(&jobHistories, &models.JobHistory{ReserveID: reserve.ID})
+		db.Order("id desc").Limit(maxHistoryNum).Find(&jobHistories, &models.JobHistory{ReserveID: reserve.ID})
 
 		// When all of latest three record are error, maybe reserve data is old.
 		errCnt := 0
@@ -57,63 +61,17 @@ func checkReserves() {
 			}
 		}
 
-		if errCnt >= 3 && len(jobHistories) == errCnt {
-			db.Delete(&reserve)
-
-			switch notifer := reserve.Notifier; notifer {
-			case 1:
-				if !lib.SendToSlack(reserve.NotifierValue, fmt.Sprintf("Scraping Notifer - %s はスクレイピングできません。再度、登録をし直して下さい。", reserve.Url)) {
-					// nothing
-				}
-			case 2:
-				// nothing
-			default:
-				// output err to logger
-			}
-
+		if errCnt >= maxHistoryNum && len(jobHistories) == errCnt {
+			reserve.CancelReserve(db)
 			continue
 		}
 
-		history := models.JobHistory{
-			Reserve: reserve,
+		history := diffHtml(db, reserve, jobHistories[0])
+		if history == nil {
+			continue
 		}
 
-		wa := lib.WebAnalyser{
-			UserAgent: reserve.UserAgent,
-			Url:       reserve.Url,
-			Query:     reserve.HtmlSelector,
-		}
-
-		res := wa.Search()
-		history.StatusCode = res.StatusCode
-
-		if history.StatusCode == 200 {
-			formatedTarEle := ""
-
-			if res.TargetElement != "" {
-				for _, line := range strings.Split(res.TargetElement, "\n") {
-					formatedTarEle += strings.TrimSpace(line)
-				}
-
-				if formatedTarEle != reserve.PreHtml {
-					history.Html = formatedTarEle
-					reserve.PreHtml = formatedTarEle
-
-					switch notifer := reserve.Notifier; notifer {
-					case 1:
-						if lib.SendToSlack(reserve.NotifierValue, fmt.Sprintf("Scraping Notifer - %s に変更がありました。", reserve.Url)) {
-							history.IsNotice = true
-						} else {
-							history.IsNotice = false
-						}
-					case 2:
-						history.IsNotice = false
-					default:
-						history.IsNotice = false
-					}
-				}
-			}
-		}
+		reserve.LastExecutedAt = executedAt
 
 		err = db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Save(&reserve).Error; err != nil {
@@ -133,4 +91,55 @@ func checkReserves() {
 		}
 
 	}
+}
+
+func diffHtml(db *gorm.DB, reserve models.Reserve, jobHistory models.JobHistory) *models.JobHistory {
+	wa := lib.WebAnalyser{
+		UserAgent: reserve.UserAgent,
+		Url:       reserve.Url,
+		Query:     reserve.HtmlSelector,
+	}
+
+	res := wa.Search()
+	if res.StatusCode != 200 {
+		return nil
+	}
+
+	formatedTarEle := ""
+
+	if res.TargetElement == "" {
+		reserve.CancelReserve(db)
+		return nil
+	}
+
+	history := models.JobHistory{}
+	history.StatusCode = res.StatusCode
+
+	for _, line := range strings.Split(res.TargetElement, "\n") {
+		formatedTarEle += strings.TrimSpace(line)
+	}
+
+	if formatedTarEle == jobHistory.Html {
+		return nil
+	}
+
+	history.Html = formatedTarEle
+
+	// HACK: go into reserve model
+	switch notifer := reserve.Notifier; notifer {
+	case 1:
+		if lib.SendToSlack(reserve.NotifierValue, fmt.Sprintf("Scraping Notifer - %s に変更がありました。", reserve.Url)) {
+			history.IsNotice = true
+		} else {
+			history.IsNotice = false
+		}
+	case 2:
+		history.IsNotice = false
+	default:
+		history.IsNotice = false
+	}
+
+	history.Reserve = reserve
+
+	return &history
 }

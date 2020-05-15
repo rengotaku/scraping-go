@@ -29,5 +29,7 @@ func Connection() (*gorm.DB, error) {
 		return nil, err
 	}
 
+	db.LogMode(true)
+
 	return db, nil
 }

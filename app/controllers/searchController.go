@@ -130,12 +130,11 @@ func SearchConfirmLast(c *gin.Context) {
 	}
 
 	reserve := models.Reserve{
-		Url:           form.Url,
-		HtmlSelector:  form.Query,
-		NotifierValue: form.NotifierValue,
-		PreHtml:       formatedTarEle,
-		UserAgent:     c.GetHeader("User-Agent"), // Should relay this from search web site.
-		ExecutedAt:    time.Now(),
+		Url:            form.Url,
+		HtmlSelector:   form.Query,
+		NotifierValue:  form.NotifierValue,
+		UserAgent:      c.GetHeader("User-Agent"), // Should relay this from search web site.
+		LastExecutedAt: time.Now(),
 	}
 
 	if !reserve.SetNotifier(form.Notifier) {
@@ -150,12 +149,12 @@ func SearchConfirmLast(c *gin.Context) {
 		return
 	}
 
-	history := models.JobHistory{
-		Reserve:    reserve,
+	histories := []models.JobHistory{{
 		StatusCode: 200,
 		Html:       formatedTarEle,
 		IsNotice:   true,
-	}
+	}}
+	reserve.JobHistories = histories
 
 	db, err := models.Connection()
 	if err != nil {
@@ -166,10 +165,6 @@ func SearchConfirmLast(c *gin.Context) {
 	defer db.Close()
 	err = db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&reserve).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Create(&history).Error; err != nil {
 			return err
 		}
 
@@ -214,18 +209,21 @@ func SearchFinished(c *gin.Context) {
 		return
 	}
 
-	doc, err := htmlquery.Parse(strings.NewReader(reserve.PreHtml))
+	var jobHistory models.JobHistory
+	db.Order("id desc").First(&jobHistory, &models.JobHistory{ReserveID: reserve.ID})
+
+	doc, err := htmlquery.Parse(strings.NewReader(jobHistory.Html))
 
 	form := ConfirmSendForm{}
 	form.Url = reserve.Url
 	form.Query = reserve.HtmlSelector
 	// HACK: formated html is better
-	form.TargetElement = reserve.PreHtml
+	form.TargetElement = jobHistory.Html
 	form.TargetElementText = htmlquery.InnerText(doc)
 	form.Notifier = reserve.GetNotifierAsString().String
 	form.NotifierValue = reserve.NotifierValue
 	form.Interval = reserve.GetIntervalAsString().String
-	form.ExecutedAt = reserve.ExecutedAt
+	form.ExecutedAt = reserve.LastExecutedAt
 
 	session := sessions.Default(c)
 	var message string

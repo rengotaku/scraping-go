@@ -8,8 +8,8 @@ type JobHistory struct {
 	gorm.Model
 
 	ReserveID  uint
-	Reserve    Reserve
-	Html       string `gorm:"type:text;"`
+	Reserve    Reserve `gorm:"association_autoupdate:false;association_autocreate:false"`
+	Html       string  `gorm:"type:text;"`
 	StatusCode int
 	IsNotice   bool
 }

@@ -10,7 +10,7 @@
     <small class="form-text text-danger">{{ index .messages "ConfirmForm.SearchForm.WebのURL" }}</small>
     {{ end }}
     <input type="text" class="form-control" id="url" placeholder="Url" name="url" value="{{ .form.Url }}">
-    <small class="form-text text-muted">スクレイプするURLを設定して下さい。<br>例えば、<b>"https://www.amazon.co.jp/"</b></small>
+    <small class="form-text text-muted">スクレイプするURLを設定して下さい。<br>例えば、<b>"https://www.yahoo.co.jp/"</b></small>
   </div>
   <div class="form-group">
     <label class="my-label">比較する要素</label>
@@ -18,7 +18,7 @@
     <small class="form-text text-danger">{{ index .messages "ConfirmForm.SearchForm.比較する要素" }}</small>
     {{ end }}
     <input type="text" class="form-control" id="query" placeholder="Query" name="query" value="{{ .form.Query }}">
-    <small class="form-text text-muted">Chromeなどのブラウザで検証モードでコピーしたセレクタを貼り付けて下さい。<br>例えば、<b>"#nav-logo > a.nav-logo-link"</b></small>
+    <small class="form-text text-muted">Chromeなどのブラウザで検証モードでコピーしたセレクタを貼り付けて下さい。<br>例えば、<b>"#tabpanelTopics1 > div > div._2jjSS8r_I9Zd6O9NFJtDN- > ul"</b></small>
   </div>
   <button type="submit" class="btn btn-danger my-btn">確認</button>
   <input type="hidden" name="_csrf" value="{{ .csrf }}">
