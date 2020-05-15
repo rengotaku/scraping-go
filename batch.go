@@ -16,8 +16,8 @@ var (
 )
 
 func main() {
-	// cronExec()
-	checkReserves()
+	cronExec()
+	// checkReserves()
 }
 
 func cronExec() {
