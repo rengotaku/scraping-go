@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
 	"github.com/jinzhu/gorm"
@@ -29,7 +30,9 @@ func Connection() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.LogMode(true)
+	if gin.Mode() != gin.ReleaseMode {
+		db.LogMode(true)
+	}
 
 	return db, nil
 }

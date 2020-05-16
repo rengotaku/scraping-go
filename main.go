@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/contrib/renders/multitemplate"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
-
 	controllers "github.com/user/scraping-go/app/controllers"
 	helpers "github.com/user/scraping-go/app/helpers"
 	models "github.com/user/scraping-go/app/models"
@@ -24,10 +23,17 @@ func main() {
 	router.Use(lib.CsrfMiddleware(lib.CsrfOptions{
 		Secret: "49da0b13f4aa987332efec012e370bf7",
 		ErrorFunc: func(c *gin.Context) {
-			c.String(400, "CSRF token mismatch")
+			c.String(403, "Forbidden")
 			c.Abort()
 		},
 	}))
+	router.Use(lib.TimeTokenMiddleware(lib.TimeTokenOptions{
+		ErrorFunc: func(c *gin.Context) {
+			c.String(408, "Request Timeout")
+			c.Abort()
+		},
+	}))
+	router.Static("/static", "./public")
 
 	router.HTMLRender = createRender()
 

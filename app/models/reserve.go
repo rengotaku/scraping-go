@@ -23,7 +23,7 @@ type Reserve struct {
 	NotifierValue  string `gorm:"type:text;"`
 	Interval       int
 	LastExecutedAt time.Time
-	JobHistories   []JobHistory `gorm:"association_autoupdate:false;association_autocreate:false"`
+	JobHistories   []JobHistory `gorm:"association_autoupdate:false;"`
 }
 
 func (m *Reserve) AfterCreate(scope *gorm.Scope) (err error) {
