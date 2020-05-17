@@ -15,6 +15,7 @@ import (
 type Reserve struct {
 	gorm.Model
 
+	// FIXME: primary key
 	UUID           string `gorm:"type:varchar(100);"`
 	Url            string `gorm:"type:text;"`
 	HtmlSelector   string `gorm:"type:text;"`

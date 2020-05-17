@@ -75,7 +75,11 @@ type FinishedForm struct {
 }
 
 func SearchIndex(c *gin.Context) {
-	lib.BeginOtt(c, 60*10)
+	if !lib.BeginOtt(c, 60*10) {
+		c.String(403, "Forbidden")
+		c.Abort()
+		return
+	}
 
 	c.HTML(http.StatusOK, "search/index", gin.H{
 		"form":     SearchForm{},
@@ -134,8 +138,12 @@ func SearchConfirmLast(c *gin.Context) {
 		formatedTarEle += strings.TrimSpace(line)
 	}
 
+	// HACK: is it late to prevent from double post?
+	uuid := lib.EndOtt(c)
+
 	reserve := models.Reserve{
 		Url:            form.Url,
+		UUID:           uuid,
 		HtmlSelector:   form.Query,
 		NotifierValue:  form.NotifierValue,
 		UserAgent:      c.GetHeader("User-Agent"), // Should relay this from search web site.
