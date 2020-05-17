@@ -115,5 +115,7 @@ func EndOtt(c *gin.Context) string {
 	flashes := session.Flashes(timeToken)
 	session.Save()
 
-	return flashes[1].(string)
+	// dosen't match
+	sha := sha256.Sum256([]byte(flashes[0].(string) + flashes[1].(string)))
+	return hex.EncodeToString(sha[:])
 }
