@@ -9,6 +9,7 @@ require (
 	github.com/antchfx/xpath v1.1.6 // indirect
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect
 	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9
+	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/gin-contrib/sessions v0.0.0-20190101140330-dc5246754963
 	github.com/gin-gonic/contrib v0.0.0-20191209060500-d6e26eeaa607
 	github.com/gin-gonic/gin v1.6.2

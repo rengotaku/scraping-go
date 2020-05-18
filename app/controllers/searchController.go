@@ -36,6 +36,8 @@ var (
 	}
 
 	myValidate = lib.MyValidate{}.InitValidate()
+
+	completeMessgeFlag = "complete_messge_flag"
 )
 
 type SearchBaseTemplate struct {
@@ -73,6 +75,12 @@ type FinishedForm struct {
 }
 
 func SearchIndex(c *gin.Context) {
+	if !lib.BeginOtt(c, 60*10) {
+		c.String(403, "Forbidden")
+		c.Abort()
+		return
+	}
+
 	c.HTML(http.StatusOK, "search/index", gin.H{
 		"form":     SearchForm{},
 		"messages": myValidate.GetErrorMessages(nil),
@@ -120,6 +128,7 @@ func SearchConfirmLast(c *gin.Context) {
 		c.HTML(http.StatusOK, "search/confirm", gin.H{
 			"form":     form,
 			"messages": messages,
+			"csrf":     lib.GetCsrfToken(c),
 		})
 		return
 	}
@@ -129,8 +138,12 @@ func SearchConfirmLast(c *gin.Context) {
 		formatedTarEle += strings.TrimSpace(line)
 	}
 
+	// HACK: is it late to prevent from double post?
+	uuid := lib.EndOtt(c)
+
 	reserve := models.Reserve{
 		Url:            form.Url,
+		UUID:           uuid,
 		HtmlSelector:   form.Query,
 		NotifierValue:  form.NotifierValue,
 		UserAgent:      c.GetHeader("User-Agent"), // Should relay this from search web site.
@@ -179,7 +192,7 @@ func SearchConfirmLast(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Set("notifier", form.Notifier)
 	session.Set("notifier_value", form.NotifierValue)
-	session.AddFlash("1", "complete_messge_flag")
+	session.AddFlash("1", completeMessgeFlag)
 	session.Save()
 
 	// HACK: should use r.HandleContext(c) better
@@ -227,7 +240,7 @@ func SearchFinished(c *gin.Context) {
 
 	session := sessions.Default(c)
 	var message string
-	if len(session.Flashes("complete_messge_flag")) > 0 {
+	if len(session.Flashes(completeMessgeFlag)) > 0 {
 		message = "登録しました。"
 		session.Save()
 	}

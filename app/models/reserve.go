@@ -15,6 +15,7 @@ import (
 type Reserve struct {
 	gorm.Model
 
+	// FIXME: primary key
 	UUID           string `gorm:"type:varchar(100);"`
 	Url            string `gorm:"type:text;"`
 	HtmlSelector   string `gorm:"type:text;"`
@@ -23,7 +24,7 @@ type Reserve struct {
 	NotifierValue  string `gorm:"type:text;"`
 	Interval       int
 	LastExecutedAt time.Time
-	JobHistories   []JobHistory `gorm:"association_autoupdate:false;association_autocreate:false"`
+	JobHistories   []JobHistory `gorm:"association_autoupdate:false;"`
 }
 
 func (m *Reserve) AfterCreate(scope *gorm.Scope) (err error) {

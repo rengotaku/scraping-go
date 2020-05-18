@@ -19,12 +19,6 @@ const (
 	csrfToken  = "csrfToken"
 )
 
-var defaultIgnoreMethods = []string{"GET", "HEAD", "OPTIONS"}
-
-var defaultErrorFunc = func(c *gin.Context) {
-	panic(errors.New("CSRF token mismatch"))
-}
-
 var defaultTokenGetter = func(c *gin.Context) string {
 	r := c.Request
 
@@ -77,11 +71,13 @@ func CsrfMiddleware(options CsrfOptions) gin.HandlerFunc {
 	tokenGetter := options.TokenGetter
 
 	if ignoreMethods == nil {
-		ignoreMethods = defaultIgnoreMethods
+		ignoreMethods = []string{"GET", "HEAD", "OPTIONS"}
 	}
 
 	if errorFunc == nil {
-		errorFunc = defaultErrorFunc
+		errorFunc = func(c *gin.Context) {
+			panic(errors.New("CSRF token mismatch"))
+		}
 	}
 
 	if tokenGetter == nil {

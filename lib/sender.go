@@ -19,6 +19,7 @@ func SendToSlack(webhook string, message string) bool {
 
 	client := &http.Client{}
 	resp, err := client.Do(r)
+
 	if err != nil || resp.StatusCode != 200 {
 		return false
 	}
