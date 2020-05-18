@@ -1,0 +1,53 @@
+{{define "content"}}
+<div class="progress my-progress">
+  <div class="progress-bar" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+</div>
+
+<form action="/search/last_check" method="post" name="confirmSendForm">
+  <div class="form-group">
+    <label class="my-label">WebのURL</label>
+    <input type="text" value="{{ .form.Url }}" class="form-control" id="url" name="url" placeholder="Url" readonly>
+  </div>
+  <div class="form-group">
+    <label class="my-label">比較する要素</label>
+    <input type="text" value="{{ .form.Query }}" class="form-control" id="query" name="query" placeholder="Query" readonly>
+  </div>
+  <div class="form-group">
+    <label class="my-label">監視する要素</label>
+    <textarea class="form-control" id="target-element" name="target_element" rows="4" cols="40" readonly>{{ .form.TargetElement }}</textarea>
+  </div>
+  <div class="form-group">
+    <label class="my-label">監視するテキスト</label>
+    <textarea class="form-control" id="target-element-text" name="target_element_text" rows="4" cols="40" placeholder="Target Element" readonly>{{ .form.TargetElementText }}</textarea>
+  </div>
+  <div class="form-group">
+    <label class="my-label">通知先</label>
+    {{ if (index .messages "ConfirmSendForm.FinishedForm.通知方法") }}
+    <small class="form-text text-danger">{{ index .messages "ConfirmSendForm.FinishedForm.通知方法" }}</small>
+    {{ end }}
+    <select id="notifier" name="notifier">
+      <option value="slack" selected>Slack</option>
+      <option value="email" {{ if eq .form.Notifier "email" }}selected{{ else }}disabled{{ end }}>Eメール</option>
+    </select></p>
+    {{ if (index .messages "ConfirmSendForm.FinishedForm.通知方法のデータ") }}
+    <small class="form-text text-danger">{{ index .messages "ConfirmSendForm.FinishedForm.通知方法のデータ" }}</small>
+    {{ end }}
+    <input type="text" class="form-control" id="notifier-value" name="notifier_value" value="{{ .form.NotifierValue }}" placeholder="通知先情報">
+    <!-- <small class="form-text text-muted">Eメールを選択時はメールアドレス(example@example.com)を入力下さい。<br>Slackを選択時はチャンネルとWebhook(https://hooks.slack.com/services/XXXX/
+XXXX)を入力下さい。</small> -->
+  </div>
+  <div class="form-group">
+    <label class="my-label">通知間隔</label>
+    {{ if (index .messages "ConfirmSendForm.FinishedForm.通知間隔") }}
+    <small class="form-text text-danger">{{ index .messages "ConfirmSendForm.FinishedForm.通知間隔" }}</small>
+    {{ end }}
+    <select id="interval" name="interval">
+      <option value="day" selected>１日毎</option>
+      <option value="harf_hour" {{ if eq .form.Interval "hour" }}selected{{ else }}disabled{{ end }}>6時間毎</option>
+    </select></p>
+  </div>
+  <button type="submit" class="btn btn-danger my-btn" onclick="this.disabled=true;this.form.submit();">確定</button>
+  <button type="button" class="btn btn-secondary my-btn" onclick="history.back();" >戻る</button>
+  <input type="hidden" name="_csrf" value="{{ .csrf }}">
+</form>
+{{end}}
