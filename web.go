@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -23,6 +24,8 @@ const (
 
 var (
 	secretKey = ""
+	domain    = ""
+	port      = ""
 )
 
 func init() {
@@ -37,6 +40,18 @@ func init() {
 	}
 
 	fmt.Printf("secretKey: %s\n", secretKey)
+
+	domain = os.Getenv("DOMAIN")
+	if domain == "" {
+		panic("Missing `DOMAIN`, set domain like as `www.hogehoge.com`")
+	}
+
+	fmt.Printf("domain: %s\n", domain)
+
+	port = os.Getenv("PORT")
+	if port == "" {
+		panic("Missing `PORT`, set port number")
+	}
 }
 
 // HACK: move to lib
@@ -83,10 +98,14 @@ func main() {
 		return
 	}
 
-	router.Run(":8080")
+	router.Run(":" + port)
 }
 
 func routing(r *gin.Engine) {
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/search")
+	})
+
 	r.GET("/search", controllers.SearchIndex)
 	r.POST("/search/confirm", controllers.SearchConfirm)
 	r.POST("/search/last_check", controllers.SearchConfirmLast)

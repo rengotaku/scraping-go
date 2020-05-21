@@ -8,14 +8,14 @@ services:
     environment:
       GIN_MODE: $GIN_MODE
       SECRET: $SECRET
+      DOMAIN: $DOMAIN
     tty: true
     ports:
-      - "8080:8080"
+      - "$PORT:$PORT"
   batch:
     build:
       context: .
       dockerfile: Dockerfile.batch
+    environment:
+      DOMAIN: $DOMAIN
     tty: true
-# volumes:
-#   public_files:
-#     driver: local
