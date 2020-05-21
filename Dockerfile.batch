@@ -1,5 +1,5 @@
 # buildation
-FROM alpine:latest AS builder
+FROM alpine:3.11.6 AS builder
 
 # ENV GOLANG_VERSION 1.14
 ENV GOLANG_VERSION 1.13
@@ -17,7 +17,7 @@ RUN set -eux; \
       CGO_ENABLED=1 go build -o ./scraping_batch;
 
 # Execution
-FROM alpine:latest
+FROM alpine:3.11.6
 
 COPY --from=builder /go/src/github.com/user/scraping-go/batch/scraping_batch .
 
