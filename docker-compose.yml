@@ -9,6 +9,7 @@ services:
       GIN_MODE: $GIN_MODE
       SECRET: $SECRET
       DOMAIN: $DOMAIN
+      PORT: $PORT
     tty: true
     ports:
       - "$PORT:$PORT"
