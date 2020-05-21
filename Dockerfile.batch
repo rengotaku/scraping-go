@@ -1,0 +1,24 @@
+# buildation
+FROM alpine:latest AS builder
+
+# ENV GOLANG_VERSION 1.14
+ENV GOLANG_VERSION 1.13
+
+ADD . /go/src/github.com/user/scraping-go
+WORKDIR /go/src/github.com/user/scraping-go/batch
+
+RUN set -eux; \
+      apk add --no-cache --virtual .build-deps \
+        go~=$GOLANG_VERSION \
+        gcc \
+      ; \
+      \
+      go get -d -v; \
+      CGO_ENABLED=1 go build -o ./scraping_batch;
+
+# Execution
+FROM alpine:latest
+
+COPY --from=builder /go/src/github.com/user/scraping-go/batch/scraping_batch .
+
+CMD ["./scraping_batch"]

@@ -39,6 +39,7 @@ func init() {
 	fmt.Printf("secretKey: %s\n", secretKey)
 }
 
+// HACK: move to lib
 var alpha = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 // generates a random string of fixed size

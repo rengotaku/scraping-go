@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    environment:
+      GIN_MODE: $GIN_MODE
+      SECRET: $SECRET
+    tty: true
+    ports:
+      - "8080:8080"
+  batch:
+    build:
+      context: .
+      dockerfile: Dockerfile.batch
+    tty: true
+# volumes:
+#   public_files:
+#     driver: local

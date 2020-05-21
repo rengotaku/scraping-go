@@ -16,3 +16,4 @@ vendor/
 
 *.sqlite3
 main*.go
+.env
