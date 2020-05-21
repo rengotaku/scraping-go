@@ -1,17 +1,10 @@
 # scraping-go
 scraping website go
 
-# environment
-https://github.com/gin-gonic/gin/blob/master/mode.go
+# up
+```
+$ docker-compose up
+```
 
-* debug
-* release
-* test
-
-# build
-## web
-$ GOOS=linux GOARCH=amd64 go build -o ./scraping_web
-
-## batch
-$ cd batch
-$ GOOS=linux GOARCH=amd64 go build -o ./batch
+## リリース時
+.env に必要なパラメーターを設定する
