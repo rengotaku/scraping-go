@@ -73,7 +73,7 @@ workflows:
               only:
                 - master
       - slack/approval-notification:
-          message: build done
+          message: deploy done
           webhook: $SLACK_WEBHOOK
           requires:
             - deploy
