@@ -31,8 +31,9 @@ jobs:
 
       - run:
           name: Docker image をビルド
+          # https://discuss.circleci.com/t/2-1-config-and-build-processing/24102/31
           command: |
-            tee -a .env <<EOF
+            tee -a .env \<<EOF
             GIN_MODE={{REPO_NAME}}
             SECRET={{SECRET}}
             DOMAIN={{DOMAIN}}
