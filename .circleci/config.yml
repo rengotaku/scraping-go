@@ -31,10 +31,12 @@ jobs:
       - run:
           name: Docker image をビルド
           command: |
-            export GIN_MODE={{REPO_NAME}}
-            export SECRET={{SECRET}}
-            export DOMAIN={{DOMAIN}}
-            export PORT={{PORT}}
+            tee -a .env <<EOF
+            GIN_MODE={{REPO_NAME}}
+            SECRET={{SECRET}}
+            DOMAIN={{DOMAIN}}
+            PORT={{PORT}}
+            EOF
             /usr/local/bin/docker-compose build
 
   deploy:
