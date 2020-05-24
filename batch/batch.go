@@ -28,12 +28,13 @@ func init() {
 
 func main() {
 	cronExec()
-	checkReserves()
+	// checkReserves()
 }
 
 func cronExec() {
 	c := cron.New()
-	c.AddFunc("@daily", checkReserves)
+	c.AddFunc("@hourly", checkReserves)
+	// c.AddFunc("@daily", checkReserves)
 
 	fmt.Println(fmt.Sprintf("start cron - %s", time.Now().String()))
 
@@ -47,7 +48,6 @@ func checkReserves() {
 	db, err := models.Connection()
 	if err != nil {
 		panic(err)
-		return
 	}
 	defer db.Close()
 
@@ -139,6 +139,7 @@ func diffHtml(db *gorm.DB, reserve models.Reserve, jobHistory models.JobHistory)
 	// HACK: go into reserve model
 	switch notifer := reserve.Notifier; notifer {
 	case 1:
+		// HACK: Refer same logic with controller
 		path := fmt.Sprintf("%s/search/finish?reserved_key=%s", "https://"+domain, reserve.UUID)
 		if lib.SendToSlack(reserve.NotifierValue, fmt.Sprintf("Scraping Notifer - %s に変更: %s", reserve.Url, path)) {
 			history.IsNotice = true

@@ -1,6 +1,13 @@
 version: '3'
 
 services:
+  # https://github.com/docker/compose/issues/3270#issuecomment-504101249
+  volumes-provisioner:
+    image: hasnat/volumes-provisioner
+    environment:
+      PROVISION_DIRECTORIES: "10001:10001:0755:/db"
+    volumes:
+      - db:/db
   web:
     build:
       context: .
@@ -10,13 +17,28 @@ services:
       SECRET: $SECRET
       DOMAIN: $DOMAIN
       PORT: $PORT
-    tty: true
+    volumes:
+      - db:/go/src/github.com/user/scraping-go/db:cached
     ports:
       - "$PORT:$PORT"
+    command: ./scraping_web
+    tty: true
+    depends_on:
+      - volumes-provisioner
   batch:
     build:
       context: .
       dockerfile: Dockerfile.batch
     environment:
+      GIN_MODE: $GIN_MODE
       DOMAIN: $DOMAIN
+    volumes:
+      - db:/go/src/github.com/user/scraping-go/db:cached
+    command: ./scraping_batch
     tty: true
+    depends_on:
+      - volumes-provisioner
+
+volumes:
+  db:
+    driver: local

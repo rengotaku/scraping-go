@@ -1,9 +1,23 @@
 package controllers
 
 import (
+	"log"
+	"os"
 	"reflect"
 	"strings"
 )
+
+var (
+	appPWD = ""
+)
+
+func init() {
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	appPWD = dir
+}
 
 type BaseTemplate interface {
 	GetLayoutFile() string
@@ -32,17 +46,17 @@ func (t *Template) getType() string {
 }
 
 func (t *Template) GetFullLayoute() string {
-	return "./views/layout/" + t.BaseTemplate.GetLayoutFile()
+	return appPWD + "/views/layout/" + t.BaseTemplate.GetLayoutFile()
 }
 
 func (t *Template) GetFullCss() string {
-	return "./views/css/" + t.BaseTemplate.GetCssFile()
+	return appPWD + "/views/css/" + t.BaseTemplate.GetCssFile()
 }
 
 func (t *Template) GetFullViews() []string {
 	r := []string{}
 	for _, f := range t.Files {
-		r = append(r, "./views/"+t.getType()+"/"+f)
+		r = append(r, appPWD+"/views/"+t.getType()+"/"+f)
 	}
 	return r
 }
