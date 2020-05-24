@@ -28,21 +28,34 @@ jobs:
             chmod +x ~/docker-compose
             sudo mv ~/docker-compose /usr/local/bin/docker-compose
 
+      - setup_remote_docker
+
       - run:
           name: Docker image をビルド
           command: |
+            tee -a .env <<EOF
+            GIN_MODE={{REPO_NAME}}
+            SECRET={{SECRET}}
+            DOMAIN={{DOMAIN}}
+            PORT={{PORT}}
+            EOF
             /usr/local/bin/docker-compose build
 
   deploy:
-    docker:
-      # specify the version
-      - image: circleci/golang:1.9
+    machine: true
+    # docker:
+    #   # specify the version
+    #   - image: circleci/golang:1.9
 
     steps:
       - checkout
 
+      - add_ssh_keys:
+          fingerprints:
+            - "38:61:56:90:7c:42:a5:ed:3d:2c:14:1b:4a:4c:72:83"
+
       - run:
-          command: "echo test"
+          command: "ssh -p {{REMOTE_POST}} {{REMOTE_USER}}@{{REMOTE_HOST}} '~/{{REPO_NAME}}/deploy.sh'"
 
 workflows:
   version: 2
