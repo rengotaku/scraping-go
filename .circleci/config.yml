@@ -42,7 +42,7 @@ jobs:
             /usr/local/bin/docker-compose build
 
   deploy:
-    # machine: true
+    machine: true
     # docker:
     #   # specify the version
     #   - image: circleci/golang:1.9
