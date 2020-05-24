@@ -6,10 +6,9 @@ scraping website go
 $ docker-compose up
 ```
 
-## production
-```
-$ nohup docker-compose up -d
-```
+## deploy
+### create .env in remote host
+set somethings what need to up to .env
 
-## リリース時
-.env に必要なパラメーターを設定する
+### merge to master
+Circle CI will deploy
