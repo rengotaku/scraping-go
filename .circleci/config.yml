@@ -1,7 +1,7 @@
 # Golang CircleCI 2.0 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-go/ for more details
-version: 2
+version: 2.1
 jobs:
   build:
     docker:
@@ -41,6 +41,10 @@ jobs:
             EOF
             /usr/local/bin/docker-compose build
 
+      - slack/approval-notification:
+          message: build done
+          webhook: {{SLACK_WEBHOOK}}
+
   deploy:
     machine: true
     # docker:
@@ -56,10 +60,12 @@ jobs:
 
       - run:
           command: |
-            ssh -p {{REMOTE_PORT}} {{REMOTE_USER}}@{{REMOTE_HOST}} '~/{{REPO_NAME}}/deploy.sh'"
+            ssh -p {{REMOTE_PORT}} {{REMOTE_USER}}@{{REMOTE_HOST}} '~/{{REPO_NAME}}/deploy.sh'
 
+orbs:
+  slack: circleci/slack@x.y.z
+version: 2.1
 workflows:
-  version: 2
   build:
     jobs:
       - build
