@@ -62,7 +62,7 @@ jobs:
             ssh -p {{REMOTE_PORT}} {{REMOTE_USER}}@{{REMOTE_HOST}} '~/{{REPO_NAME}}/deploy.sh'
 
 orbs:
-  slack: circleci/slack@x.y.z
+  slack: circleci/slack@3.4.2
 version: 2.1
 workflows:
   build:
