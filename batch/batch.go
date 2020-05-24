@@ -33,8 +33,7 @@ func main() {
 
 func cronExec() {
 	c := cron.New()
-	c.AddFunc("@hourly", checkReserves)
-	// c.AddFunc("@daily", checkReserves)
+	c.AddFunc("@daily", checkReserves)
 
 	fmt.Println(fmt.Sprintf("start cron - %s", time.Now().String()))
 
