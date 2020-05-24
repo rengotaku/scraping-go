@@ -74,4 +74,4 @@ workflows:
                 - master
       - slack/approval-notification:
           message: build done
-          webhook: {{SLACK_WEBHOOK}}
+          webhook: $SLACK_WEBHOOK
