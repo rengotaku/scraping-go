@@ -3,22 +3,54 @@ FROM alpine:3.11.6 AS builder
 
 # ENV GOLANG_VERSION 1.14
 ENV GOLANG_VERSION 1.13
+ENV PROJECT_PATH /go/src/github.com/user/scraping-go
+ENV BINARY_NAME scraping_web
+# Create appuser
+ENV USER=appuser
+ENV UID=10001
 
-ADD . /go/src/github.com/user/scraping-go
-WORKDIR /go/src/github.com/user/scraping-go
+# See https://stackoverflow.com/a/55757473/12429735RUN 
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    "${USER}"
+
+WORKDIR $PROJECT_PATH
+ADD . $PROJECT_PATH
 
 RUN set -eux; \
       apk add --no-cache --virtual .build-deps \
         go~=$GOLANG_VERSION \
         gcc \
+        tzdata \
       ; \
       \
       go get -d -v; \
-      CGO_ENABLED=1 go build -o ./scraping_web;
+      CGO_ENABLED=1 go build -ldflags="-w -s" -o ./$BINARY_NAME ./web.go;
 
-# Execution
+# # Execution
 FROM alpine:3.11.6
 
-COPY --from=builder /go/src/github.com/user/scraping-go .
+ENV PROJECT_PATH /go/src/github.com/user/scraping-go
+ENV BINARY_NAME scraping_web
+ENV USER=appuser
 
-CMD ["./scraping_web"]
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+
+WORKDIR $PROJECT_PATH
+
+COPY --from=builder $PROJECT_PATH/$BINARY_NAME $PROJECT_PATH
+COPY --from=builder $PROJECT_PATH/public $PROJECT_PATH/public
+COPY --from=builder $PROJECT_PATH/views $PROJECT_PATH/views
+
+USER $USER:$USER
+
+# CMD ["./$BINARY_NAME"]

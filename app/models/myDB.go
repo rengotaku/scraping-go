@@ -1,6 +1,9 @@
 package models
 
 import (
+	"log"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 
@@ -8,8 +11,16 @@ import (
 )
 
 var (
-	dbFileName = "reserves.sqlite3"
+	dbFileName = ""
 )
+
+func init() {
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	dbFileName = dir + "/db/" + gin.Mode() + ".sqlite3"
+}
 
 func InitMigration() error {
 	db, err := gorm.Open("sqlite3", dbFileName)

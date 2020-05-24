@@ -95,7 +95,6 @@ func main() {
 	err := models.InitMigration()
 	if err != nil {
 		panic(err)
-		return
 	}
 
 	router.Run(":" + port)
