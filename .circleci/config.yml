@@ -38,10 +38,10 @@ jobs:
           command: |
             ssh -p $REMOTE_PORT $REMOTE_USER@$REMOTE_HOST "~/$CIRCLE_PROJECT_REPONAME/deploy.sh"
 
-      - slack/notify:
-          color: '#FF0000'
-          message: failed to deploy
-          webhook: $SLACK_WEBHOOK
+      - run:
+          name: Kick the deploy shell in remote host
+          command: |
+            curl -X POST -H 'Content-type: application/json' --data '{"text":"Failed to deploy!"}' $SLACK_WEBHOOK
           when: on_fail
 
 orbs:
