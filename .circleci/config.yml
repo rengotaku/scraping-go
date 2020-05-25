@@ -21,12 +21,13 @@ jobs:
           name: build docker image
           # https://discuss.circleci.com/t/2-1-config-and-build-processing/24102/31
           command: |
-            tee -a .env \<<EOF
-            GIN_MODE={{REPO_NAME}}
-            SECRET={{SECRET}}
-            DOMAIN={{DOMAIN}}
-            PORT={{PORT}}
-            EOF
+            cat .env.sample | \
+            sed 's/IMAGE_VER=.*/IMAGE_VER=v0.0.0/' | \
+            sed 's/GIN_MODE=.*/GIN_MODE={{REPO_NAME}}/' | \
+            sed 's/SECRET=.*/SECRET={{SECRET}}/' | \
+            sed 's/DOMAIN=.*/DOMAIN={{DOMAIN}}/' | \
+            sed 's/PORT=.*/PORT={{PORT}}/' \
+            > .env
             /usr/local/bin/docker-compose build
 
   deploy:
