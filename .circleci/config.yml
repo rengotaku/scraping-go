@@ -21,25 +21,36 @@ jobs:
           name: build docker image
           # https://discuss.circleci.com/t/2-1-config-and-build-processing/24102/31
           command: |
-            tee -a .env \<<EOF
-            GIN_MODE={{REPO_NAME}}
-            SECRET={{SECRET}}
-            DOMAIN={{DOMAIN}}
-            PORT={{PORT}}
-            EOF
+            cat .env.sample | \
+            # sed 's/IMAGE_VER=.*/IMAGE_VER=v0.0.0/' | \
+            sed 's/GIN_MODE=.*/GIN_MODE={{REPO_NAME}}/' | \
+            sed 's/SECRET=.*/SECRET={{SECRET}}/' | \
+            sed 's/DOMAIN=.*/DOMAIN={{DOMAIN}}/' | \
+            sed 's/PORT=.*/PORT={{PORT}}/' \
+            > .env
             /usr/local/bin/docker-compose build
 
   deploy:
     machine: true
     steps:
       - checkout
+
+      - run: git config user.email "circleci@example.com"
+      - run: git config user.name "circleci"
+      # change MAJOR.MINOR with your hand(PATCH is auto increments)
+      - run: export IMAGE_VER=$(grep IMAGE_VER= .env.sample | cut -d '=' -f 2)
+      - run:
+          name: If tag hasn't been created, it will be created and pushed
+          command: |
+            [[ $(git tag -l "$IMAGE_VER") == '' ]] && git tag -a $IMAGE_VER -m "new docker image"
+
       - add_ssh_keys:
           fingerprints:
             - "38:61:56:90:7c:42:a5:ed:3d:2c:14:1b:4a:4c:72:83"
       - run:
           name: Kick the deploy shell in remote host
           command: |
-            ssh -p $REMOTE_PORT $REMOTE_USER@$REMOTE_HOST "~/$CIRCLE_PROJECT_REPONAME/deploy.sh"
+            ssh -p $REMOTE_PORT $REMOTE_USER@$REMOTE_HOST "export IMAGE_VER=\"$IMAGE_VER\"; ~/$CIRCLE_PROJECT_REPONAME/deploy.sh"
 
 orbs:
   slack: circleci/slack@3.4.2

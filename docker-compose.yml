@@ -9,6 +9,8 @@ services:
     volumes:
       - db:/db
   web:
+    # https://docs.docker.com/compose/compose-file/#build
+    image: webapp:$IMAGE_VER
     build:
       context: .
       dockerfile: Dockerfile.web
@@ -26,6 +28,7 @@ services:
     depends_on:
       - volumes-provisioner
   batch:
+    image: batchapp:$IMAGE_VER
     build:
       context: .
       dockerfile: Dockerfile.batch
