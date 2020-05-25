@@ -39,7 +39,10 @@ jobs:
       - run: git config user.name "circleci"
       # change MAJOR.MINOR with your hand(PATCH is auto increments)
       - run: export IMAGE_VER=$(grep IMAGE_VER= .env.sample | cut -d '=' -f 2)
-      - run: [[ $(git tag -l "$IMAGE_VER") == '' ]] && git tag -a $IMAGE_VER -m "new docker image"
+      - run:
+          name: If tag hasn't been created, it will be created and pushed
+          command: |
+            [[ $(git tag -l "$IMAGE_VER") == '' ]] && git tag -a $IMAGE_VER -m "new docker image"
 
       - add_ssh_keys:
           fingerprints:
