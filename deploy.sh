@@ -1,6 +1,8 @@
 #!/bin/bash -xe
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 
+cd $SCRIPT_DIR
+
 /usr/bin/git pull origin master
 
 /usr/local/bin/docker-compose build
@@ -10,4 +12,4 @@ SCRIPT_DIR=$(cd $(dirname $0); pwd)
 nohup /usr/local/bin/docker-compose up -d
 
 # https://stackoverflow.com/questions/33913020/docker-remove-none-tag-images
-/usr/bin/docker image prune
+# /usr/bin/docker image prune
