@@ -50,7 +50,7 @@ func init() {
 
 	port = os.Getenv("PORT")
 	if port == "" {
-		panic("Missing `PORT`, set port number")
+		port = "8080"
 	}
 }
 
