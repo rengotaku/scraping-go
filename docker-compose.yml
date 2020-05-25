@@ -5,36 +5,32 @@ services:
   volumes-provisioner:
     image: hasnat/volumes-provisioner
     environment:
-      PROVISION_DIRECTORIES: "10001:10001:0755:/db"
+      PROVISION_DIRECTORIES: "$UID:$UID:0755:/db"
     volumes:
       - db:/db
   web:
     # https://docs.docker.com/compose/compose-file/#build
-    image: webapp:$IMAGE_VER
+    image: webapp:$TAG
     build:
       context: .
       dockerfile: Dockerfile.web
-    environment:
-      GIN_MODE: $GIN_MODE
-      SECRET: $SECRET
-      DOMAIN: $DOMAIN
-      PORT: $PORT
+    env_file:
+     - app.env
     volumes:
       - db:/go/src/github.com/user/scraping-go/db:cached
     ports:
-      - "$PORT:$PORT"
+      - "8080:8080"
     command: ./scraping_web
     tty: true
     depends_on:
       - volumes-provisioner
   batch:
-    image: batchapp:$IMAGE_VER
+    image: batchapp:$TAG
     build:
       context: .
       dockerfile: Dockerfile.batch
-    environment:
-      GIN_MODE: $GIN_MODE
-      DOMAIN: $DOMAIN
+    env_file:
+     - app.env
     volumes:
       - db:/go/src/github.com/user/scraping-go/db:cached
     command: ./scraping_batch
