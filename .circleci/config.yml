@@ -21,12 +21,7 @@ jobs:
           name: build docker image
           # https://discuss.circleci.com/t/2-1-config-and-build-processing/24102/31
           command: |
-            cat Docker/app.env.sample | \
-            sed 's/GIN_MODE=.*/GIN_MODE={{REPO_NAME}}/' | \
-            sed 's/SECRET=.*/SECRET={{SECRET}}/' | \
-            sed 's/DOMAIN=.*/DOMAIN={{DOMAIN}}/' | \
-            sed 's/PORT=.*/PORT={{PORT}}/' \
-            > Docker/app.env
+            cp app.env.sample app.env
             /usr/local/bin/docker-compose build
 
   deploy:
@@ -42,6 +37,12 @@ jobs:
           name: Kick the deploy shell in remote host
           command: |
             ssh -p $REMOTE_PORT $REMOTE_USER@$REMOTE_HOST "~/$CIRCLE_PROJECT_REPONAME/deploy.sh"
+
+      - slack/notify:
+          color: '#FF0000'
+          message: failed to deploy
+          webhook: $SLACK_WEBHOOK
+          when: on_fail
 
 orbs:
   slack: circleci/slack@3.4.2
