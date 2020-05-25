@@ -39,7 +39,7 @@ jobs:
             ssh -p $REMOTE_PORT $REMOTE_USER@$REMOTE_HOST "~/$CIRCLE_PROJECT_REPONAME/deploy.sh"
 
       - run:
-          name: Kick the deploy shell in remote host
+          name: Push failed message to Slack
           command: |
             curl -X POST -H 'Content-type: application/json' --data '{"text":"Failed to deploy!"}' $SLACK_WEBHOOK
           when: on_fail
